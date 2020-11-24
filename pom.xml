@@ -3,11 +3,11 @@
 	<modelVersion>4.0.0</modelVersion>
 
 	<parent>
-		<groupId>org.mastodon</groupId>
-		<artifactId>pom-mastodon</artifactId>
-		<version>1.0.0-beta-1-SNAPSHOT</version>
+		<groupId>org.scijava</groupId>
+		<artifactId>pom-scijava</artifactId>
+		<version>29.2.1</version>
 	</parent>
-
+	
 	<artifactId>mastodon-tomancak</artifactId>
 	<version>0.1.2-SNAPSHOT</version>
 
@@ -28,16 +28,9 @@
 
 	<dependencies>
 		<dependency>
-			<groupId>${mastodon.group}</groupId>
-			<artifactId>mastodon-collection</artifactId>
-		</dependency>
-		<dependency>
-			<groupId>${mastodon.group}</groupId>
-			<artifactId>mastodon-graph</artifactId>
-		</dependency>
-		<dependency>
-			<groupId>${mastodon.group}</groupId>
+			<groupId>org.mastodon</groupId>
 			<artifactId>mastodon</artifactId>
+			<version>1.0.0-beta-17-SNAPSHOT</version>
 		</dependency>
 		<dependency>
 			<groupId>sc.fiji</groupId>
