@@ -48,6 +48,7 @@ public class FlipDescendants
 		final Spot spot = appModel.getFocusModel().getFocusedVertex( appModel.getModel().getGraph().vertexRef() );
 		final Model model = appModel.getModel();
 		flipDescendants( model, Collections.singleton( spot ) );
+		appModel.getBranchGraphSync().sync();
 	}
 
 	public static void flipDescendants( Model model, Collection<Spot> spots )
