@@ -103,10 +103,19 @@ public class MatchTreesTest
 
 	private void matchGraphs( TreeMatching m )
 	{
+		AffineTransform3D noOffsetTransform = noOffsetTransform( m.transformAB );
 		RefList<Spot> toBeFlipped = new RefArrayList<>( m.graphB.vertices().getRefPool());
 		for(String label : m.commonRootLabels )
-			matchTree( m.transformAB, m.graphA, m.graphB, m.rootsA.get( label ), m.rootsB.get( label ), toBeFlipped );
+			matchTree( noOffsetTransform, m.graphA, m.graphB, m.rootsA.get( label ), m.rootsB.get( label ), toBeFlipped );
 		FlipDescendants.flipDescendants( m.embryoB.getModel(), toBeFlipped );
+	}
+
+	private AffineTransform3D noOffsetTransform( AffineTransform3D transformAB )
+	{
+		AffineTransform3D noOffsetTransform = new AffineTransform3D();
+		noOffsetTransform.set( transformAB );
+		noOffsetTransform.setTranslation( 0, 0, 0 );
+		return noOffsetTransform;
 	}
 
 	private void tagLineages( TreeMatching m )
@@ -197,10 +206,7 @@ public class MatchTreesTest
 			pointsA.add(new RealPoint( m.rootsA.get( label ) ));
 			pointsB.add(new RealPoint( m.rootsB.get( label ) ));
 		}
-		AffineTransform3D transformAB = estimateScaleRotationTranslation( pointsA, pointsB );
-		transformAB.setTranslation( 0, 0, 0 );
-		sanityCheck(transformAB);
-		return transformAB;
+		return estimateScaleRotationTranslation( pointsA, pointsB );
 	}
 
 	@NotNull
