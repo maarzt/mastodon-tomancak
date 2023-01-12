@@ -6,18 +6,29 @@ import net.imglib2.RealLocalizable;
 import net.imglib2.RealPoint;
 import net.imglib2.realtransform.AffineTransform3D;
 import org.apache.commons.math3.stat.regression.OLSMultipleLinearRegression;
+import org.jetbrains.annotations.NotNull;
 import org.jfree.data.xy.XYSeries;
 import org.junit.Test;
 import org.mastodon.collection.ObjectRefMap;
 import org.mastodon.collection.RefList;
 import org.mastodon.collection.ref.RefArrayList;
+import org.mastodon.graph.algorithm.traversal.DepthFirstSearch;
+import org.mastodon.graph.algorithm.traversal.GraphSearch;
+import org.mastodon.graph.algorithm.traversal.SearchListener;
+import org.mastodon.mamut.MainWindow;
 import org.mastodon.mamut.MamutAppModel;
 import org.mastodon.mamut.WindowManager;
+import org.mastodon.mamut.model.Link;
+import org.mastodon.mamut.model.Model;
 import org.mastodon.mamut.model.ModelGraph;
 import org.mastodon.mamut.model.Spot;
 import org.mastodon.mamut.project.MamutProject;
 import org.mastodon.mamut.project.MamutProjectIO;
-import org.mastodon.mamut.tomancak.sort_tree.SortTree;
+import org.mastodon.mamut.tomancak.sort_tree.FlipDescendants;
+import org.mastodon.mamut.tomancak.sort_tree.SortTreeUtils;
+import org.mastodon.model.tag.ObjTagMap;
+import org.mastodon.model.tag.TagSetModel;
+import org.mastodon.model.tag.TagSetStructure;
 import org.scijava.Context;
 
 import java.io.IOException;
@@ -28,35 +39,147 @@ import static org.junit.Assert.assertEquals;
 
 public class MatchTreesTest
 {
+	public static void main(String... args) {
+		new MatchTreesTest().test();
+	}
 
 	@Test
-	public void test() throws Exception
+	public void test()
 	{
 		try(Context context = new Context())
 		{
-			MamutAppModel embryoA = openAppModel( context, "/home/arzt/Datasets/Mette/E1.mastodon" );
-			MamutAppModel embryoB = openAppModel( context, "/home/arzt/Datasets/Mette/E2.mastodon" );
-			ModelGraph graphA = embryoA.getModel().getGraph();
-			ModelGraph graphB = embryoB.getModel().getGraph();
-			ObjectRefMap<String, Spot> rootsA = LineageTreeUtils.getRootsMap( graphA );
-			ObjectRefMap<String, Spot> rootsB = LineageTreeUtils.getRootsMap( graphB );
-			Set<String> commonRootLabels = commonRootLabels( rootsA, rootsB );
-			List<RealPoint> pointsA = new ArrayList<>();
-			List<RealPoint> pointsB = new ArrayList<>();
-			for(String label : commonRootLabels ) {
-				pointsA.add(new RealPoint( rootsA.get( label ) ));
-				pointsB.add(new RealPoint( rootsB.get( label ) ));
-			}
-			AffineTransform3D transformAB = estimateScaleRotationTranslation( pointsA, pointsB );
-			transformAB.setTranslation( 0, 0, 0 );
-			sanityCheck(transformAB);
-			RefList<Spot> toBeFlipped = new RefArrayList<>(graphB.vertices().getRefPool());
-			commonRootLabels = Collections.singleton( "2d11" ); // TODO remove me
-			for(String label : commonRootLabels )
-				matchTree( transformAB, graphA, graphB, rootsA.get( label ), rootsB.get( label ), toBeFlipped );
-			FlipDescendants.flipDescendants( embryoB.getModel(), toBeFlipped );
-			//Thread.sleep( 1_000_000 );
+			TreeMatching m = initializeTreeMatching( context );
+			m.transformAB = estimateTransform( m );
+			tagLineages( m );
+			applyTransform( m.graphB, m.transformAB );
+			flipGraphB( m );
 		}
+	}
+
+	private void applyTransform( ModelGraph graphB, AffineTransform3D transformAB )
+	{
+		double[] position = new double[3];
+		for( Spot spot : graphB.vertices() ) {
+			spot.localize( position );
+			transformAB.applyInverse( position, position );
+			spot.setPosition( position );
+		}
+	}
+
+	private void flipGraphB( TreeMatching m )
+	{
+		RefList<Spot> toBeFlipped = new RefArrayList<>( m.graphB.vertices().getRefPool());
+		for(String label : m.commonRootLabels )
+			matchTree( m.transformAB, m.graphA, m.graphB, m.rootsA.get( label ), m.rootsB.get( label ), toBeFlipped );
+		FlipDescendants.flipDescendants( m.embryoB.getModel(), toBeFlipped );
+	}
+
+	private void tagLineages( TreeMatching m )
+	{
+		Map<String, Integer> colorMap = createColorMap( m.commonRootLabels );
+		tagLineages( colorMap, m.rootsA, m.embryoA.getModel() );
+		tagLineages( colorMap, m.rootsB, m.embryoB.getModel() );
+	}
+
+	private void tagLineages( Map<String, Integer> colorMap, ObjectRefMap<String, Spot> roots, Model model )
+	{
+		TagSetStructure.TagSet tagSet = createTagSet( model, colorMap );
+		for(TagSetStructure.Tag tag : tagSet.getTags()) {
+			tagLineage( model, roots.get(tag.label()), tagSet, tag );
+		}
+	}
+
+	private void tagLineage( Model model, Spot root, TagSetStructure.TagSet tagSet, TagSetStructure.Tag tag )
+	{
+		ObjTagMap<Spot, TagSetStructure.Tag> spotTags = model.getTagSetModel().getVertexTags().tags( tagSet );
+		ObjTagMap<Link, TagSetStructure.Tag> edgeTags = model.getTagSetModel().getEdgeTags().tags( tagSet );
+
+		SearchListener<Spot, Link, DepthFirstSearch<Spot, Link>> searchListener = new SearchListener<Spot, Link, DepthFirstSearch<Spot, Link>>()
+		{
+			@Override
+			public void processVertexLate( Spot spot, DepthFirstSearch<Spot, Link> search )
+			{
+				// do nothing
+			}
+
+			@Override
+			public void processVertexEarly( Spot spot, DepthFirstSearch<Spot, Link> spotLinkDepthFirstSearch )
+			{
+				spotTags.set( spot, tag );
+			}
+
+			@Override
+			public void processEdge( Link link, Spot spot, Spot v1, DepthFirstSearch<Spot, Link> spotLinkDepthFirstSearch )
+			{
+				edgeTags.set( link, tag );
+			}
+
+			@Override
+			public void crossComponent( Spot spot, Spot v1, DepthFirstSearch<Spot, Link> spotLinkDepthFirstSearch )
+			{
+				// do nothing
+			}
+		};
+
+		DepthFirstSearch<Spot, Link> search = new DepthFirstSearch<>( model.getGraph(), GraphSearch.SearchDirection.DIRECTED );
+		search.setTraversalListener( searchListener );
+		search.start( root );
+	}
+
+	private TagSetStructure.TagSet createTagSet( Model model, Map<String, Integer> tagsAndColors )
+	{
+		TagSetModel<Spot, Link> tagSetModel = model.getTagSetModel();
+		TagSetStructure tss = copy( tagSetModel.getTagSetStructure() );
+		TagSetStructure.TagSet tagSet = tss.createTagSet("lineages");
+		tagsAndColors.forEach( tagSet::createTag );
+		tagSetModel.setTagSetStructure( tss );
+		return tagSet;
+	}
+
+	private TagSetStructure copy( TagSetStructure original )
+	{
+		TagSetStructure copy = new TagSetStructure();
+		copy.set( original );
+		return copy;
+	}
+
+	@NotNull
+	private Map<String, Integer> createColorMap( Set<String> labels )
+	{
+		Map<String, Integer> colors = new HashMap<>();
+		int count = 4;
+		for(String label : labels )
+			colors.put( label, Glasbey.GLASBEY[ count++ ] );
+		return colors;
+	}
+
+	@NotNull
+	private AffineTransform3D estimateTransform( TreeMatching m )
+	{
+		List<RealPoint> pointsA = new ArrayList<>();
+		List<RealPoint> pointsB = new ArrayList<>();
+		for(String label : m.commonRootLabels ) {
+			pointsA.add(new RealPoint( m.rootsA.get( label ) ));
+			pointsB.add(new RealPoint( m.rootsB.get( label ) ));
+		}
+		AffineTransform3D transformAB = estimateScaleRotationTranslation( pointsA, pointsB );
+		transformAB.setTranslation( 0, 0, 0 );
+		sanityCheck(transformAB);
+		return transformAB;
+	}
+
+	@NotNull
+	private TreeMatching initializeTreeMatching( Context context )
+	{
+		TreeMatching m = new TreeMatching();
+		m.embryoA = openAppModel( context, "/home/arzt/Datasets/Mette/E1.mastodon" );
+		m.embryoB = openAppModel( context, "/home/arzt/Datasets/Mette/E2.mastodon" );
+		m.graphA = m.embryoA.getModel().getGraph();
+		m.graphB = m.embryoB.getModel().getGraph();
+		m.rootsA = LineageTreeUtils.getRootsMap( m.graphA );
+		m.rootsB = LineageTreeUtils.getRootsMap( m.graphB );
+		m.commonRootLabels = commonRootLabels( m.rootsA, m.rootsB );
+		return m;
 	}
 
 	private void sanityCheck( AffineTransform3D transfrom )
@@ -129,10 +252,10 @@ public class MatchTreesTest
 			if(dividingA.outgoingEdges().size() != 2 ||
 			  dividingB.outgoingEdges().size() != 2)
 				return;
-			double[] directionA = SortTree.directionOfCellDevision( graphA, dividingA );
-			double[] directionB = SortTree.directionOfCellDevision( graphB, dividingB );
-			transformAB.apply( directionA, directionA );
-			boolean flip = SortTree.scalarProduct( directionA, directionB ) < 0;
+			double[] directionA = SortTreeUtils.directionOfCellDevision( graphA, dividingA );
+			double[] directionB = SortTreeUtils.directionOfCellDevision( graphB, dividingB );
+			//transformAB.apply( directionA, directionA );
+			boolean flip = SortTreeUtils.scalarProduct( directionA, directionB ) < 0;
 			toBeFlipped.add( dividingB );
 			{
 				Spot childA = dividingA.outgoingEdges().get( 0 ).getTarget();
@@ -292,6 +415,7 @@ public class MatchTreesTest
 			MamutProject project = new MamutProjectIO().load( projectPath );
 			WindowManager wm = new WindowManager( context );
 			wm.getProjectManager().open( project );
+			new MainWindow( wm ).setVisible( true );
 			return wm.getAppModel();
 		}
 		catch ( SpimDataException | IOException e )
