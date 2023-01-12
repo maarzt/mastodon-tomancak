@@ -10,6 +10,7 @@ import org.jetbrains.annotations.NotNull;
 import org.jfree.data.xy.XYSeries;
 import org.junit.Test;
 import org.mastodon.collection.ObjectRefMap;
+import org.mastodon.collection.RefCollections;
 import org.mastodon.collection.RefList;
 import org.mastodon.collection.ref.RefArrayList;
 import org.mastodon.graph.algorithm.traversal.DepthFirstSearch;
@@ -51,22 +52,56 @@ public class MatchTreesTest
 			TreeMatching m = initializeTreeMatching( context );
 			m.transformAB = estimateTransform( m );
 			tagLineages( m );
-			applyTransform( m.graphB, m.transformAB );
-			flipGraphB( m );
+			rotateGraphB( m );
+			flipGraphRandomly( m.embryoB.getModel() );
+			matchGraphs( m );
 		}
 	}
 
-	private void applyTransform( ModelGraph graphB, AffineTransform3D transformAB )
+	private void rotateGraphB( TreeMatching m )
+	{
+		transformGraph( m.transformAB.inverse(), m.graphB );
+		m.transformAB = new AffineTransform3D();
+	}
+
+	private void flipGraphRandomly( Model model )
+	{
+		RefList<Spot> dividingSpots = getDividingSpots( model.getGraph() );
+		RefList<Spot> toBeFlipped = randomlySubSampleRefList( dividingSpots );
+		FlipDescendants.flipDescendants( model, toBeFlipped );
+	}
+
+	private RefList<Spot> randomlySubSampleRefList( RefList<Spot> list )
+	{
+		RefList<Spot> result = RefCollections.createRefList( list );
+		Random random = new Random();
+		for( Spot a : list )
+			if( random.nextBoolean() )
+				result.add(a);
+		return result;
+	}
+
+	@NotNull
+	private RefList<Spot> getDividingSpots( ModelGraph graph )
+	{
+		RefList<Spot> divisions = new RefArrayList<>( graph.vertices().getRefPool() );
+		for(Spot spot : graph.vertices() )
+			if ( spot.outgoingEdges().size() == 2 )
+				divisions.add( spot );
+		return divisions;
+	}
+
+	private void transformGraph( AffineTransform3D transformAB, ModelGraph graphB )
 	{
 		double[] position = new double[3];
 		for( Spot spot : graphB.vertices() ) {
 			spot.localize( position );
-			transformAB.applyInverse( position, position );
+			transformAB.apply( position, position );
 			spot.setPosition( position );
 		}
 	}
 
-	private void flipGraphB( TreeMatching m )
+	private void matchGraphs( TreeMatching m )
 	{
 		RefList<Spot> toBeFlipped = new RefArrayList<>( m.graphB.vertices().getRefPool());
 		for(String label : m.commonRootLabels )
@@ -254,9 +289,10 @@ public class MatchTreesTest
 				return;
 			double[] directionA = SortTreeUtils.directionOfCellDevision( graphA, dividingA );
 			double[] directionB = SortTreeUtils.directionOfCellDevision( graphB, dividingB );
-			//transformAB.apply( directionA, directionA );
+			transformAB.apply( directionA, directionA );
 			boolean flip = SortTreeUtils.scalarProduct( directionA, directionB ) < 0;
-			toBeFlipped.add( dividingB );
+			if(flip)
+				toBeFlipped.add( dividingB );
 			{
 				Spot childA = dividingA.outgoingEdges().get( 0 ).getTarget();
 				Spot childB = dividingB.outgoingEdges().get( flip ? 1 : 0 ).getTarget();
