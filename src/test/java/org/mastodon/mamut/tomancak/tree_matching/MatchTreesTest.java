@@ -1,4 +1,4 @@
-package org.mastodon.mamut.tomancak;
+package org.mastodon.mamut.tomancak.tree_matching;
 
 import mpicbg.models.*;
 import mpicbg.spim.data.SpimDataException;
@@ -49,7 +49,7 @@ public class MatchTreesTest
 	{
 		try(Context context = new Context())
 		{
-			TreeMatching m = initializeTreeMatching( context );
+			GraphPair m = initializeTreeMatching( context );
 			m.transformAB = estimateTransform( m );
 			tagLineages( m );
 			rotateGraphB( m );
@@ -58,7 +58,7 @@ public class MatchTreesTest
 		}
 	}
 
-	private void rotateGraphB( TreeMatching m )
+	private void rotateGraphB( GraphPair m )
 	{
 		transformGraph( m.transformAB.inverse(), m.graphB );
 		m.transformAB = new AffineTransform3D();
@@ -101,7 +101,7 @@ public class MatchTreesTest
 		}
 	}
 
-	private void matchGraphs( TreeMatching m )
+	private void matchGraphs( GraphPair m )
 	{
 		AffineTransform3D noOffsetTransform = noOffsetTransform( m.transformAB );
 		RefList<Spot> toBeFlipped = new RefArrayList<>( m.graphB.vertices().getRefPool());
@@ -118,7 +118,7 @@ public class MatchTreesTest
 		return noOffsetTransform;
 	}
 
-	private void tagLineages( TreeMatching m )
+	private void tagLineages( GraphPair m )
 	{
 		Map<String, Integer> colorMap = createColorMap( m.commonRootLabels );
 		tagLineages( colorMap, m.rootsA, m.embryoA.getModel() );
@@ -198,7 +198,7 @@ public class MatchTreesTest
 	}
 
 	@NotNull
-	private AffineTransform3D estimateTransform( TreeMatching m )
+	private AffineTransform3D estimateTransform( GraphPair m )
 	{
 		List<RealPoint> pointsA = new ArrayList<>();
 		List<RealPoint> pointsB = new ArrayList<>();
@@ -210,9 +210,9 @@ public class MatchTreesTest
 	}
 
 	@NotNull
-	private TreeMatching initializeTreeMatching( Context context )
+	private GraphPair initializeTreeMatching( Context context )
 	{
-		TreeMatching m = new TreeMatching();
+		GraphPair m = new GraphPair();
 		m.embryoA = openAppModel( context, "/home/arzt/Datasets/Mette/E1.mastodon" );
 		m.embryoB = openAppModel( context, "/home/arzt/Datasets/Mette/E2.mastodon" );
 		m.graphA = m.embryoA.getModel().getGraph();

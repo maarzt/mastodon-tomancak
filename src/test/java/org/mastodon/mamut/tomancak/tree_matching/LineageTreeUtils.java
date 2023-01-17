@@ -1,4 +1,4 @@
-package org.mastodon.mamut.tomancak;
+package org.mastodon.mamut.tomancak.tree_matching;
 
 import org.mastodon.collection.ObjectRefMap;
 import org.mastodon.collection.RefSet;

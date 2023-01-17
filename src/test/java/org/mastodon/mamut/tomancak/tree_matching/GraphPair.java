@@ -1,4 +1,4 @@
-package org.mastodon.mamut.tomancak;
+package org.mastodon.mamut.tomancak.tree_matching;
 
 import java.util.Set;
 
@@ -8,7 +8,7 @@ import org.mastodon.mamut.MamutAppModel;
 import org.mastodon.mamut.model.ModelGraph;
 import org.mastodon.mamut.model.Spot;
 
-public class TreeMatching
+public class GraphPair
 {
 	public MamutAppModel embryoA;
 

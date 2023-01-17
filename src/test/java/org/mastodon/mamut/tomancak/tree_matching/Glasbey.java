@@ -1,4 +1,4 @@
-package org.mastodon.mamut.tomancak;
+package org.mastodon.mamut.tomancak.tree_matching;
 
 import static org.junit.Assert.assertEquals;
 
