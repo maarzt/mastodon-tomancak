@@ -8,8 +8,6 @@ import org.mastodon.mamut.model.ModelGraph;
 import org.mastodon.mamut.model.Spot;
 import org.mastodon.pool.PoolCollectionWrapper;
 
-import java.util.Set;
-
 public class LineageTreeUtils
 {
 	public static RefSet<Spot> getRoots( ModelGraph graph ) {
