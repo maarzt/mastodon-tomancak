@@ -18,7 +18,6 @@ import org.mastodon.mamut.model.Spot;
 import org.mastodon.mamut.project.MamutProject;
 import org.mastodon.mamut.project.MamutProjectIO;
 import org.mastodon.mamut.tomancak.sort_tree.FlipDescendants;
-import org.mastodon.mamut.tomancak.sort_tree.SortTreeUtils;
 import org.scijava.Context;
 
 import java.io.IOException;
@@ -92,7 +91,7 @@ public class MatchTreesTest
 		AffineTransform3D noOffsetTransform = noOffsetTransform( m.transformAB );
 		RefList<Spot> toBeFlipped = new RefArrayList<>( m.graphB.vertices().getRefPool());
 		for(String label : m.commonRootLabels )
-			matchTree( noOffsetTransform, m.graphA, m.graphB, m.rootsA.get( label ), m.rootsB.get( label ), toBeFlipped );
+			TreeMatchingAlgorithm.matchTree( noOffsetTransform, m.graphA, m.graphB, m.rootsA.get( label ), m.rootsB.get( label ), toBeFlipped );
 		FlipDescendants.flipDescendants( m.embryoB.getModel(), toBeFlipped );
 	}
 
@@ -127,42 +126,6 @@ public class MatchTreesTest
 		m.rootsB = LineageTreeUtils.getRootsMap( m.graphB );
 		m.commonRootLabels = commonRootLabels( m.rootsA, m.rootsB );
 		return m;
-	}
-
-	private static void matchTree( AffineTransform3D transformAB, ModelGraph graphA, ModelGraph graphB, Spot rootA, Spot rootB, RefList<Spot> toBeFlipped )
-	{
-		Spot dividingA = LineageTreeUtils.getDividingSpot( graphA, rootA );
-		Spot dividingB = LineageTreeUtils.getDividingSpot( graphB, rootB );
-		try
-		{
-			if(dividingA.outgoingEdges().size() != 2 ||
-			  dividingB.outgoingEdges().size() != 2)
-				return;
-			double[] directionA = SortTreeUtils.directionOfCellDevision( graphA, dividingA );
-			double[] directionB = SortTreeUtils.directionOfCellDevision( graphB, dividingB );
-			transformAB.apply( directionA, directionA );
-			boolean flip = SortTreeUtils.scalarProduct( directionA, directionB ) < 0;
-			if(flip)
-				toBeFlipped.add( dividingB );
-			{
-				Spot childA = dividingA.outgoingEdges().get( 0 ).getTarget();
-				Spot childB = dividingB.outgoingEdges().get( flip ? 1 : 0 ).getTarget();
-				matchTree( transformAB, graphA, graphB, childA, childB, toBeFlipped );
-				graphA.releaseRef( childA );
-				graphA.releaseRef( childB );
-			}
-			{
-				Spot childA = dividingA.outgoingEdges().get( 1 ).getTarget();
-				Spot childB = dividingB.outgoingEdges().get( flip ? 0 : 1 ).getTarget();
-				matchTree( transformAB, graphA, graphB, childA, childB, toBeFlipped );
-				graphA.releaseRef( childA );
-				graphA.releaseRef( childB );
-			}
-		} finally
-		{
-			graphA.releaseRef( dividingA );
-			graphB.releaseRef( dividingB );
-		}
 	}
 
 	private static Set<String> commonRootLabels( ObjectRefMap<String, Spot> rootsA, ObjectRefMap<String, Spot> rootsB )
