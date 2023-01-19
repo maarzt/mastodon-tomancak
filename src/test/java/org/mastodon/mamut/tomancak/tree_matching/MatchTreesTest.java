@@ -1,13 +1,11 @@
 package org.mastodon.mamut.tomancak.tree_matching;
 
 import mpicbg.spim.data.SpimDataException;
-import net.imglib2.RealPoint;
 import net.imglib2.realtransform.AffineTransform3D;
 import org.jetbrains.annotations.NotNull;
-import org.junit.Test;
-import org.mastodon.collection.ObjectRefMap;
 import org.mastodon.collection.RefCollections;
 import org.mastodon.collection.RefList;
+import org.mastodon.collection.RefRefMap;
 import org.mastodon.collection.ref.RefArrayList;
 import org.mastodon.mamut.MainWindow;
 import org.mastodon.mamut.MamutAppModel;
@@ -25,28 +23,33 @@ import java.util.*;
 
 public class MatchTreesTest
 {
+
+	public Model embryoA;
+
+	public Model embryoB;
+
 	public static void main(String... args) {
-		new MatchTreesTest().test();
+		new MatchTreesTest().run();
 	}
 
-	@Test
-	public void test()
+	private MatchTreesTest()
 	{
-		try(Context context = new Context())
-		{
-			GraphPair m = initializeTreeMatching( context );
-			m.transformAB = estimateTransform( m );
-			LineageColoring.tagLineages( m );
-			rotateGraphB( m );
-			flipGraphRandomly( m.embryoB.getModel() );
-			matchGraphs( m );
-		}
+		Context context = new Context();
+		embryoA = openAppModel( context, "/home/arzt/Datasets/Mette/E1.mastodon" ).getModel();
+		embryoB = openAppModel( context, "/home/arzt/Datasets/Mette/E2.mastodon" ).getModel();
 	}
 
-	private static void rotateGraphB( GraphPair m )
+	public void run()
 	{
-		transformGraph( m.transformAB.inverse(), m.graphB );
-		m.transformAB = new AffineTransform3D();
+		LineageColoring.tagLineages( embryoA, embryoB );
+		TreeMatchingAlgorithm.run( embryoA, embryoB );
+	}
+
+	private void rotateGraphB()
+	{
+		RefRefMap< Spot, Spot > pairedRoots = RootsPairing.pairRoots( embryoA.getGraph(), embryoB.getGraph() );
+		AffineTransform3D transformAB = EstimateTransformation.estimateTransform( pairedRoots );
+		transformGraph( transformAB.inverse(), embryoB.getGraph() );
 	}
 
 	private static void flipGraphRandomly( Model model )
@@ -84,57 +87,6 @@ public class MatchTreesTest
 			transformAB.apply( position, position );
 			spot.setPosition( position );
 		}
-	}
-
-	private static void matchGraphs( GraphPair m )
-	{
-		AffineTransform3D noOffsetTransform = noOffsetTransform( m.transformAB );
-		RefList<Spot> toBeFlipped = new RefArrayList<>( m.graphB.vertices().getRefPool());
-		for(String label : m.commonRootLabels )
-			TreeMatchingAlgorithm.matchTree( noOffsetTransform, m.graphA, m.graphB, m.rootsA.get( label ), m.rootsB.get( label ), toBeFlipped );
-		FlipDescendants.flipDescendants( m.embryoB.getModel(), toBeFlipped );
-	}
-
-	private static AffineTransform3D noOffsetTransform( AffineTransform3D transformAB )
-	{
-		AffineTransform3D noOffsetTransform = new AffineTransform3D();
-		noOffsetTransform.set( transformAB );
-		noOffsetTransform.setTranslation( 0, 0, 0 );
-		return noOffsetTransform;
-	}
-
-	private static AffineTransform3D estimateTransform( GraphPair m )
-	{
-		List<RealPoint> pointsA = new ArrayList<>();
-		List<RealPoint> pointsB = new ArrayList<>();
-		for(String label : m.commonRootLabels ) {
-			pointsA.add(new RealPoint( m.rootsA.get( label ) ));
-			pointsB.add(new RealPoint( m.rootsB.get( label ) ));
-		}
-		return EstimateTransformation.estimateScaleRotationTranslation( pointsA, pointsB );
-	}
-
-	@NotNull
-	private static GraphPair initializeTreeMatching( Context context )
-	{
-		GraphPair m = new GraphPair();
-		m.embryoA = openAppModel( context, "/home/arzt/Datasets/Mette/E1.mastodon" );
-		m.embryoB = openAppModel( context, "/home/arzt/Datasets/Mette/E2.mastodon" );
-		m.graphA = m.embryoA.getModel().getGraph();
-		m.graphB = m.embryoB.getModel().getGraph();
-		m.rootsA = LineageTreeUtils.getRootsMap( m.graphA );
-		m.rootsB = LineageTreeUtils.getRootsMap( m.graphB );
-		m.commonRootLabels = commonRootLabels( m.rootsA, m.rootsB );
-		return m;
-	}
-
-	private static Set<String> commonRootLabels( ObjectRefMap<String, Spot> rootsA, ObjectRefMap<String, Spot> rootsB )
-	{
-		List<String> blackList = Arrays.asList( "ventral", "dorsal", "left", "right", "vegetal_posterior", "apical_anterior" );
-		Set<String> intersection = new HashSet<>( rootsA.keySet());
-		intersection.retainAll( rootsB.keySet() );
-		intersection.removeAll( blackList );
-		return intersection;
 	}
 
 	private static MamutAppModel openAppModel( Context context, String projectPath )

@@ -3,9 +3,11 @@ package org.mastodon.mamut.tomancak.tree_matching;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Set;
+import java.util.stream.Collectors;
 
 import org.jetbrains.annotations.NotNull;
-import org.mastodon.collection.ObjectRefMap;
+import org.mastodon.collection.RefCollection;
+import org.mastodon.collection.RefRefMap;
 import org.mastodon.graph.algorithm.traversal.DepthFirstSearch;
 import org.mastodon.graph.algorithm.traversal.GraphSearch;
 import org.mastodon.graph.algorithm.traversal.SearchListener;
@@ -18,18 +20,22 @@ import org.mastodon.model.tag.TagSetStructure;
 
 public class LineageColoring
 {
-	static void tagLineages( GraphPair m )
+	static void tagLineages(Model embryoA, Model embryoB)
 	{
-		Map<String, Integer> colorMap = createColorMap( m.commonRootLabels );
-		tagLineages( colorMap, m.rootsA, m.embryoA.getModel() );
-		tagLineages( colorMap, m.rootsB, m.embryoB.getModel() );
+		RefRefMap< Spot, Spot > roots = RootsPairing.pairRoots( embryoA.getGraph(), embryoB.getGraph() );
+		Set< String > labels = roots.keySet().stream().map( Spot::getLabel ).collect( Collectors.toSet() );
+		Map<String, Integer> colorMap = createColorMap( labels );
+		tagLineages( colorMap, roots.keySet(), embryoA );
+		tagLineages( colorMap, roots.values(), embryoB );
 	}
 
-	private static void tagLineages( Map<String, Integer> colorMap, ObjectRefMap<String, Spot > roots, Model model )
+	private static void tagLineages( Map<String, Integer> colorMap, RefCollection< Spot > roots, Model model )
 	{
 		TagSetStructure.TagSet tagSet = createTagSet( model, colorMap );
-		for(TagSetStructure.Tag tag : tagSet.getTags()) {
-			tagLineage( model, roots.get(tag.label()), tagSet, tag );
+		Map< String, TagSetStructure.Tag > tags = tagSet.getTags().stream()
+				.collect( Collectors.toMap( TagSetStructure.Tag::label, tag -> tag ) );
+		for( Spot root : roots ) {
+			tagLineage( model, root, tagSet, tags.get(root.getLabel()) );
 		}
 	}
 

@@ -11,6 +11,8 @@ import mpicbg.models.PointMatch;
 import mpicbg.models.SimilarityModel3D;
 import net.imglib2.RealPoint;
 import net.imglib2.realtransform.AffineTransform3D;
+import org.mastodon.collection.RefRefMap;
+import org.mastodon.mamut.model.Spot;
 
 public class EstimateTransformation
 {
@@ -35,5 +37,17 @@ public class EstimateTransformation
 		AffineTransform3D affineTransform3D = new AffineTransform3D();
 		affineTransform3D.set( m );
 		return affineTransform3D;
+	}
+
+	static AffineTransform3D estimateTransform( RefRefMap< Spot, Spot > roots )
+	{
+		List< RealPoint > pointsA = new ArrayList<>();
+		List< RealPoint > pointsB = new ArrayList<>();
+		for( Spot rootA : roots.keySet() ) {
+			Spot rootB = roots.get( rootA );
+			pointsA.add( new RealPoint( rootA ) );
+			pointsB.add( new RealPoint( rootB ) );
+		}
+		return estimateScaleRotationTranslation( pointsA, pointsB );
 	}
 }

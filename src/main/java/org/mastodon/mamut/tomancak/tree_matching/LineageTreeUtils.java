@@ -29,7 +29,7 @@ public class LineageTreeUtils
 		return roots;
 	}
 
-	public static Spot getDividingSpot( ModelGraph graph, final Spot spot )
+	public static Spot getBranchEnd( ModelGraph graph, final Spot spot )
 	{
 		Spot s = graph.vertexRef();
 		s.refTo( spot );
@@ -37,5 +37,17 @@ public class LineageTreeUtils
 			s = s.outgoingEdges().get( 0 ).getTarget(s);
 		}
 		return s;
+	}
+	
+	public static boolean doesBranchDivide( ModelGraph graph, final Spot spot )
+	{
+		Spot branchEnd = getBranchEnd( graph, spot );
+		try
+		{
+			return branchEnd.outgoingEdges().size() > 1;
+		}
+		finally {
+			graph.releaseRef( branchEnd );		
+		}
 	}
 }
