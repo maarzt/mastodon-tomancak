@@ -21,7 +21,7 @@ import org.scijava.Context;
 import java.io.IOException;
 import java.util.*;
 
-public class MatchTreesTest
+public class LineageRegistrationDemo
 {
 
 	public Model embryoA;
@@ -29,10 +29,10 @@ public class MatchTreesTest
 	public Model embryoB;
 
 	public static void main(String... args) {
-		new MatchTreesTest().run();
+		new LineageRegistrationDemo().run();
 	}
 
-	private MatchTreesTest()
+	private LineageRegistrationDemo()
 	{
 		Context context = new Context();
 		embryoA = openAppModel( context, "/home/arzt/Datasets/Mette/E1.mastodon" ).getModel();
@@ -42,13 +42,13 @@ public class MatchTreesTest
 	public void run()
 	{
 		LineageColoring.tagLineages( embryoA, embryoB );
-		TreeMatchingAlgorithm.run( embryoA, embryoB );
+		LineageRegistrationAlgorithm.run( embryoA, embryoB );
 	}
 
 	private void rotateGraphB()
 	{
 		RefRefMap< Spot, Spot > pairedRoots = RootsPairing.pairRoots( embryoA.getGraph(), embryoB.getGraph() );
-		AffineTransform3D transformAB = EstimateTransformation.estimateTransform( pairedRoots );
+		AffineTransform3D transformAB = EstimateTransformation.estimateScaleRotationAndTranslation( pairedRoots );
 		transformGraph( transformAB.inverse(), embryoB.getGraph() );
 	}
 

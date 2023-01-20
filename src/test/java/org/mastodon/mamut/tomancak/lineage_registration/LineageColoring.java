@@ -20,7 +20,15 @@ import org.mastodon.model.tag.TagSetStructure;
 
 public class LineageColoring
 {
-	static void tagLineages(Model embryoA, Model embryoB)
+	/**
+	 * Assigns a tag to the lineages in two models, model A and modelB:
+	 * <p>
+	 * Creates a new tag set "lineages" in both models.
+	 * A tag is added for all the root nodes that where successfully matched using {@link RootsPairing#pairRoots}.
+	 * The tags of matching roots node gets the same colors assigned.
+	 * Finally the tag is applied to all the descendants of a root node.
+	 */	
+	public static void tagLineages(Model embryoA, Model embryoB)
 	{
 		RefRefMap< Spot, Spot > roots = RootsPairing.pairRoots( embryoA.getGraph(), embryoB.getGraph() );
 		Set< String > labels = roots.keySet().stream().map( Spot::getLabel ).collect( Collectors.toSet() );

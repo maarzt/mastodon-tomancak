@@ -25,7 +25,7 @@ public class EstimateTransformationTest
 		expected.translate( 7,6,8 );
 		List<RealPoint> a = Arrays.asList( point(1, 0, 0), point( 0, 1, 0 ), point( 0, 0, 1), point(0, 0,0) );
 		List<RealPoint> b = transformPoints( expected, a );
-		AffineTransform3D m = EstimateTransformation.estimateScaleRotationTranslation(a, b);
+		AffineTransform3D m = EstimateTransformation.estimateScaleRotationAndTranslation(a, b);
 		EstimateTransformationTest.assertTransformEquals( expected, m, 0.001 );
 	}
 

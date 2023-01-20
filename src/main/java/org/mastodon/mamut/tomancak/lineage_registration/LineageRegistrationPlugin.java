@@ -8,15 +8,20 @@ import org.mastodon.mamut.model.Model;
 import org.mastodon.mamut.project.MamutProject;
 import org.mastodon.mamut.project.MamutProjectIO;
 
-public class TreeMatching
+/**
+ * Shows the {@link LineageRegistrationAlgorithm} and
+ * executes the {@link LineageRegistrationAlgorithm} when
+ * ok is clicked.
+ */
+public class LineageRegistrationPlugin
 {
 	public static void showDialog( MamutAppModel appModel )
 	{
-		File otherProject = TreeMatchingDialog.showDialog();
+		File otherProject = LineageRegistrationDialog.showDialog();
 		if( otherProject == null)
 			return;
 		Model model = openModel( otherProject );
-		TreeMatchingAlgorithm.run( model, appModel.getModel() );
+		LineageRegistrationAlgorithm.run( model, appModel.getModel() );
 	}
 	
 	private static Model openModel( File file ) {

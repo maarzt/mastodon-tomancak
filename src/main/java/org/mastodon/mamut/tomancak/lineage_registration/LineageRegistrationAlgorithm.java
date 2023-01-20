@@ -15,7 +15,7 @@ import org.mastodon.mamut.tomancak.sort_tree.SortTreeUtils;
  * By doing so it figures out which spots need to be flipped in order
  * to match the TrackSchemes of both lineages.
  */
-public class TreeMatchingAlgorithm
+public class LineageRegistrationAlgorithm
 {
 	private final AffineTransform3D transformAB;
 	
@@ -30,14 +30,14 @@ public class TreeMatchingAlgorithm
 		ModelGraph graphA = embryoA.getGraph();
 		ModelGraph graphB = embryoB.getGraph();
 		RefRefMap< Spot, Spot > roots = RootsPairing.pairRoots( graphA, graphB );
-		AffineTransform3D transformAB = EstimateTransformation.estimateTransform( roots );
-		RefList< Spot > toBeFlipped = new TreeMatchingAlgorithm(
+		AffineTransform3D transformAB = EstimateTransformation.estimateScaleRotationAndTranslation( roots );
+		RefList< Spot > toBeFlipped = new LineageRegistrationAlgorithm(
 				graphA, graphB,
 				roots, transformAB ).getToBeFlipped();
 		FlipDescendants.flipDescendants( embryoB, toBeFlipped );
 	}
 
-	public TreeMatchingAlgorithm( ModelGraph graphA, ModelGraph graphB, RefRefMap< Spot, Spot > roots,
+	public LineageRegistrationAlgorithm( ModelGraph graphA, ModelGraph graphB, RefRefMap< Spot, Spot > roots,
 			AffineTransform3D transformAB ) {
 		this.transformAB = noOffsetTransform( transformAB );
 		this.graphA = graphA;

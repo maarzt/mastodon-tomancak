@@ -12,7 +12,7 @@ import javax.swing.filechooser.FileNameExtensionFilter;
 import net.miginfocom.swing.MigLayout;
 import org.mastodon.ui.util.FileChooser;
 
-public class TreeMatchingDialog extends JDialog
+public class LineageRegistrationDialog extends JDialog
 {
 	private final JTextArea pathTextArea;	
 	
@@ -20,7 +20,7 @@ public class TreeMatchingDialog extends JDialog
 	
 	private boolean ok = false;
 	
-	public TreeMatchingDialog() {
+	public LineageRegistrationDialog() {
 		super(( JFrame ) null,"Sort TrackScheme to Match Another Lineage", true);
 		setLayout( new MigLayout("insets dialog, fill") );
 
@@ -69,7 +69,7 @@ public class TreeMatchingDialog extends JDialog
 	}
 	
 	public static File showDialog() {
-		TreeMatchingDialog dialog = new TreeMatchingDialog();
+		LineageRegistrationDialog dialog = new LineageRegistrationDialog();
 		dialog.setLocationByPlatform( true );
 		dialog.pack();
 		dialog.setVisible( true );
@@ -77,7 +77,7 @@ public class TreeMatchingDialog extends JDialog
 	}
 	
 	public static void main(String... args) {
-		File file = TreeMatchingDialog.showDialog();
+		File file = LineageRegistrationDialog.showDialog();
 		System.out.println(file);
 	}
 }

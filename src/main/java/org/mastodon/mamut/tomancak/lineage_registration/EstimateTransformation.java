@@ -16,7 +16,25 @@ import org.mastodon.mamut.model.Spot;
 
 public class EstimateTransformation
 {
-	static AffineTransform3D estimateScaleRotationTranslation( List< RealPoint > a, List< RealPoint > b )
+
+	/**
+	 * Return a affine transform, that is composed of scaling, rotation and translation operation.
+	 * The transformation is optimized to minimize the distances of the transformed "key" spots
+	 * to the "value" spots.
+	 */
+	public static AffineTransform3D estimateScaleRotationAndTranslation( RefRefMap< Spot, Spot > pairs )
+	{
+		List< RealPoint > pointsA = new ArrayList<>();
+		List< RealPoint > pointsB = new ArrayList<>();
+		for( Spot rootA : pairs.keySet() ) {
+			Spot rootB = pairs.get( rootA );
+			pointsA.add( new RealPoint( rootA ) );
+			pointsB.add( new RealPoint( rootB ) );
+		}
+		return estimateScaleRotationAndTranslation( pointsA, pointsB );
+	}
+	
+	static AffineTransform3D estimateScaleRotationAndTranslation( List< RealPoint > a, List< RealPoint > b )
 	{
 		AbstractAffineModel3D model = new SimilarityModel3D();
 		assert a.size() == b.size();
@@ -37,17 +55,5 @@ public class EstimateTransformation
 		AffineTransform3D affineTransform3D = new AffineTransform3D();
 		affineTransform3D.set( m );
 		return affineTransform3D;
-	}
-
-	static AffineTransform3D estimateTransform( RefRefMap< Spot, Spot > roots )
-	{
-		List< RealPoint > pointsA = new ArrayList<>();
-		List< RealPoint > pointsB = new ArrayList<>();
-		for( Spot rootA : roots.keySet() ) {
-			Spot rootB = roots.get( rootA );
-			pointsA.add( new RealPoint( rootA ) );
-			pointsB.add( new RealPoint( rootB ) );
-		}
-		return estimateScaleRotationTranslation( pointsA, pointsB );
 	}
 }
