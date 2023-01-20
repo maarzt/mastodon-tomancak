@@ -1,4 +1,4 @@
-package org.mastodon.mamut.tomancak.tree_matching;
+package org.mastodon.mamut.tomancak.lineage_registration;
 
 import java.io.File;
 
