@@ -26,65 +26,42 @@
  * POSSIBILITY OF SUCH DAMAGE.
  * #L%
  */
-package org.mastodon.mamut.tomancak.merging;
+package org.mastodon.mamut.tomancak.sort_tree;
 
-import org.mastodon.graph.ref.AbstractVertex;
+import org.junit.Test;
+import org.mastodon.mamut.model.Model;
 import org.mastodon.mamut.model.ModelGraph;
 import org.mastodon.mamut.model.Spot;
-import org.mastodon.mamut.tomancak.merging.MatchingGraph.MatchingVertexPool;
-import org.mastodon.pool.ByteMappedElement;
 
-public class MatchingVertex extends AbstractVertex< MatchingVertex, MatchingEdge, MatchingVertexPool, ByteMappedElement >
+import java.util.Collection;
+import java.util.Collections;
+
+import static org.junit.Assert.assertArrayEquals;
+import static org.junit.Assert.assertEquals;
+
+public class SortTreeTest
 {
-	MatchingVertex( final MatchingVertexPool pool )
-	{
-		super( pool );
+	@Test
+	public void testFlip() {
+		// setup
+		Model model = new Model();
+		ModelGraph graph = model.getGraph();
+		Spot spot = graph.addVertex().init( 0, array(2, 2, 2), 0.5 );
+		Spot a = graph.addVertex().init( 1, array( 3, 2, 2), 0.5 );
+		Spot b = graph.addVertex().init( 1, array( 1, 2, 2), 0.5 );
+		graph.addEdge( spot, a ).init();
+		graph.addEdge( spot, b ).init();
+		Spot left = graph.addVertex().init( 0, array( 0, 0, 0 ), 0.1 );
+		Spot right = graph.addVertex().init( 0, array( 1, 0, 0 ), 0.1 );
+		// process
+		SortTree.sortLeftRightAnchors(model, graph.vertices(), Collections.singleton( left ), Collections.singleton( right ) );
+		// test
+		assertEquals(b, spot.outgoingEdges().get(0).getTarget());
+		assertEquals(a, spot.outgoingEdges().get(1).getTarget());
 	}
 
-	public MatchingVertex init( final int graphId, final int spotId )
+	private double[] array( double... values )
 	{
-		pool.graphId.set( this, graphId );
-		pool.spotId.set( this, spotId );
-		return this;
-	}
-
-	int graphId()
-	{
-		return pool.graphId.get( this );
-	}
-
-	int spotId()
-	{
-		return pool.spotId.get( this );
-	}
-
-	public Spot getSpot()
-	{
-		return getSpot( spotRef() );
-	}
-
-	public Spot getSpot( final Spot ref )
-	{
-		return getModelGraph().getGraphIdBimap().getVertex( spotId(), ref );
-	}
-
-	private ModelGraph getModelGraph()
-	{
-		return pool.modelGraphs.get( graphId() );
-	}
-
-	private Spot spotRef()
-	{
-		return pool.modelGraphs.get( 0 ).vertexRef();
-	}
-
-	@Override
-	public String toString()
-	{
-		final StringBuffer sb = new StringBuffer( "{" );
-		sb.append( graphId() );
-		sb.append( ", " ).append( getSpot().getLabel() );
-		sb.append( '}' );
-		return sb.toString();
+		return values;
 	}
 }

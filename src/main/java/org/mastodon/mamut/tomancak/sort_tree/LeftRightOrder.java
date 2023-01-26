@@ -26,65 +26,38 @@
  * POSSIBILITY OF SUCH DAMAGE.
  * #L%
  */
-package org.mastodon.mamut.tomancak.merging;
+package org.mastodon.mamut.tomancak.sort_tree;
 
-import org.mastodon.graph.ref.AbstractVertex;
 import org.mastodon.mamut.model.ModelGraph;
 import org.mastodon.mamut.model.Spot;
-import org.mastodon.mamut.tomancak.merging.MatchingGraph.MatchingVertexPool;
-import org.mastodon.pool.ByteMappedElement;
 
-public class MatchingVertex extends AbstractVertex< MatchingVertex, MatchingEdge, MatchingVertexPool, ByteMappedElement >
+import java.util.Collection;
+import java.util.List;
+import java.util.function.Predicate;
+
+public class LeftRightOrder implements Predicate<Spot>
 {
-	MatchingVertex( final MatchingVertexPool pool )
-	{
-		super( pool );
-	}
 
-	public MatchingVertex init( final int graphId, final int spotId )
-	{
-		pool.graphId.set( this, graphId );
-		pool.spotId.set( this, spotId );
-		return this;
-	}
+	private final ModelGraph graph;
 
-	int graphId()
-	{
-		return pool.graphId.get( this );
-	}
+	private final List<double[]> directions;
 
-	int spotId()
+	public LeftRightOrder( ModelGraph graph, Collection<Spot> leftAnchors, Collection<Spot> rightAnchors )
 	{
-		return pool.spotId.get( this );
-	}
-
-	public Spot getSpot()
-	{
-		return getSpot( spotRef() );
-	}
-
-	public Spot getSpot( final Spot ref )
-	{
-		return getModelGraph().getGraphIdBimap().getVertex( spotId(), ref );
-	}
-
-	private ModelGraph getModelGraph()
-	{
-		return pool.modelGraphs.get( graphId() );
-	}
-
-	private Spot spotRef()
-	{
-		return pool.modelGraphs.get( 0 ).vertexRef();
+		this.graph = graph;
+		int numberOfTimePoints = SortTreeUtils.getNumberOfTimePoints( graph );
+		List<double[]> left = SortTreeUtils.calculateAndInterpolateAveragePosition( numberOfTimePoints, leftAnchors );
+		List<double[]> right = SortTreeUtils.calculateAndInterpolateAveragePosition( numberOfTimePoints, rightAnchors );
+		this.directions = SortTreeUtils.subtract( right, left );
 	}
 
 	@Override
-	public String toString()
+	public boolean test( Spot spot )
 	{
-		final StringBuffer sb = new StringBuffer( "{" );
-		sb.append( graphId() );
-		sb.append( ", " ).append( getSpot().getLabel() );
-		sb.append( '}' );
-		return sb.toString();
+		if (spot.outgoingEdges().size() != 2)
+			return true;
+		double[] divisionDirection = SortTreeUtils.directionOfCellDevision( graph, spot );
+		double[] sortingDirection = directions.get( spot.getTimepoint() );
+		return SortTreeUtils.scalarProduct( sortingDirection, divisionDirection) >= 0;
 	}
 }

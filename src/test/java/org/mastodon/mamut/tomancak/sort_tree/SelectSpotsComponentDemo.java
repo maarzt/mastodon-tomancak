@@ -26,65 +26,34 @@
  * POSSIBILITY OF SUCH DAMAGE.
  * #L%
  */
-package org.mastodon.mamut.tomancak.merging;
+package org.mastodon.mamut.tomancak.sort_tree;
 
-import org.mastodon.graph.ref.AbstractVertex;
-import org.mastodon.mamut.model.ModelGraph;
-import org.mastodon.mamut.model.Spot;
-import org.mastodon.mamut.tomancak.merging.MatchingGraph.MatchingVertexPool;
-import org.mastodon.pool.ByteMappedElement;
+import javax.swing.JFrame;
+import javax.swing.JLabel;
+import javax.swing.WindowConstants;
+import mpicbg.spim.data.SpimDataException;
+import net.miginfocom.swing.MigLayout;
+import org.mastodon.mamut.MamutAppModel;
+import org.mastodon.mamut.WindowManager;
+import org.mastodon.mamut.project.MamutProjectIO;
+import org.scijava.Context;
 
-public class MatchingVertex extends AbstractVertex< MatchingVertex, MatchingEdge, MatchingVertexPool, ByteMappedElement >
+import java.io.IOException;
+
+public class SelectSpotsComponentDemo
 {
-	MatchingVertex( final MatchingVertexPool pool )
+	public static void main(String... args)
+			throws IOException, SpimDataException
 	{
-		super( pool );
-	}
-
-	public MatchingVertex init( final int graphId, final int spotId )
-	{
-		pool.graphId.set( this, graphId );
-		pool.spotId.set( this, spotId );
-		return this;
-	}
-
-	int graphId()
-	{
-		return pool.graphId.get( this );
-	}
-
-	int spotId()
-	{
-		return pool.spotId.get( this );
-	}
-
-	public Spot getSpot()
-	{
-		return getSpot( spotRef() );
-	}
-
-	public Spot getSpot( final Spot ref )
-	{
-		return getModelGraph().getGraphIdBimap().getVertex( spotId(), ref );
-	}
-
-	private ModelGraph getModelGraph()
-	{
-		return pool.modelGraphs.get( graphId() );
-	}
-
-	private Spot spotRef()
-	{
-		return pool.modelGraphs.get( 0 ).vertexRef();
-	}
-
-	@Override
-	public String toString()
-	{
-		final StringBuffer sb = new StringBuffer( "{" );
-		sb.append( graphId() );
-		sb.append( ", " ).append( getSpot().getLabel() );
-		sb.append( '}' );
-		return sb.toString();
+		final WindowManager windowManager = new WindowManager( new Context() );
+		windowManager.getProjectManager().open( new MamutProjectIO().load( "/home/arzt/Datasets/Mette/E1.mastodon" ) );
+		MamutAppModel appModel = windowManager.getAppModel();
+		JFrame frame = new JFrame("SelectSpotsComponent Demo");
+		frame.setLayout( new MigLayout() );
+		frame.add(new JLabel("Select:"), "wrap");
+		frame.add(new SelectSpotsComponent( appModel ));
+		frame.pack();
+		frame.setDefaultCloseOperation( WindowConstants.EXIT_ON_CLOSE );
+		frame.setVisible( true );
 	}
 }

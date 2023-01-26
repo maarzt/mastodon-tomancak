@@ -26,65 +26,44 @@
  * POSSIBILITY OF SUCH DAMAGE.
  * #L%
  */
-package org.mastodon.mamut.tomancak.merging;
+package org.mastodon.mamut.tomancak.compact_lineage;
 
-import org.mastodon.graph.ref.AbstractVertex;
-import org.mastodon.mamut.model.ModelGraph;
-import org.mastodon.mamut.model.Spot;
-import org.mastodon.mamut.tomancak.merging.MatchingGraph.MatchingVertexPool;
-import org.mastodon.pool.ByteMappedElement;
+import java.util.Objects;
 
-public class MatchingVertex extends AbstractVertex< MatchingVertex, MatchingEdge, MatchingVertexPool, ByteMappedElement >
-{
-	MatchingVertex( final MatchingVertexPool pool )
-	{
-		super( pool );
+public class CompactLineageTree {
+
+	private final String name;
+	private final CompactLineageTree left;
+	private final CompactLineageTree right;
+
+	private CompactLineageTree(String name, CompactLineageTree left, CompactLineageTree right) {
+		this.name = name;
+		this.left = left;
+		this.right = right;
 	}
 
-	public MatchingVertex init( final int graphId, final int spotId )
+	public static CompactLineageTree node(String name, CompactLineageTree left, CompactLineageTree right)
 	{
-		pool.graphId.set( this, graphId );
-		pool.spotId.set( this, spotId );
-		return this;
+		return new CompactLineageTree(name, Objects.requireNonNull(left), Objects.requireNonNull(right));
 	}
 
-	int graphId()
-	{
-		return pool.graphId.get( this );
+	public static CompactLineageTree leaf(String name) {
+		return new CompactLineageTree(name, null, null);
 	}
 
-	int spotId()
-	{
-		return pool.spotId.get( this );
+	public String getName() {
+		return name;
 	}
 
-	public Spot getSpot()
-	{
-		return getSpot( spotRef() );
+	public CompactLineageTree getLeft() {
+		return left;
 	}
 
-	public Spot getSpot( final Spot ref )
-	{
-		return getModelGraph().getGraphIdBimap().getVertex( spotId(), ref );
+	public CompactLineageTree getRight() {
+		return right;
 	}
 
-	private ModelGraph getModelGraph()
-	{
-		return pool.modelGraphs.get( graphId() );
-	}
-
-	private Spot spotRef()
-	{
-		return pool.modelGraphs.get( 0 ).vertexRef();
-	}
-
-	@Override
-	public String toString()
-	{
-		final StringBuffer sb = new StringBuffer( "{" );
-		sb.append( graphId() );
-		sb.append( ", " ).append( getSpot().getLabel() );
-		sb.append( '}' );
-		return sb.toString();
+	public boolean isLeaf() {
+		return left == null && right == null;
 	}
 }

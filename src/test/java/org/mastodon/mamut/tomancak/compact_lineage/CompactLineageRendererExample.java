@@ -26,65 +26,61 @@
  * POSSIBILITY OF SUCH DAMAGE.
  * #L%
  */
-package org.mastodon.mamut.tomancak.merging;
+package org.mastodon.mamut.tomancak.compact_lineage;
 
-import org.mastodon.graph.ref.AbstractVertex;
-import org.mastodon.mamut.model.ModelGraph;
-import org.mastodon.mamut.model.Spot;
-import org.mastodon.mamut.tomancak.merging.MatchingGraph.MatchingVertexPool;
-import org.mastodon.pool.ByteMappedElement;
 
-public class MatchingVertex extends AbstractVertex< MatchingVertex, MatchingEdge, MatchingVertexPool, ByteMappedElement >
-{
-	MatchingVertex( final MatchingVertexPool pool )
-	{
-		super( pool );
+import java.awt.*;
+import java.awt.event.ComponentAdapter;
+import java.awt.event.ComponentEvent;
+import java.awt.geom.*;
+import java.util.Arrays;
+
+import javax.swing.*;
+
+/** A demonstration of anti-aliasing */
+public class CompactLineageRendererExample extends JPanel{
+
+	private final CompactLineageTree
+		treeA = CompactLineageTreeUtil.symmetricTree("2d", 5);
+
+	private final CompactLineageTree
+		treeB = CompactLineageTreeUtil.asymmetricTree("3d", 5);
+
+	private final CompactLineageRenderer
+		graphRenderer = new CompactLineageRenderer(
+		Arrays.asList(treeA, treeB));
+
+	public CompactLineageRendererExample() {
+		addComponentListener(new ComponentAdapter() {
+
+			@Override
+			public void componentResized(ComponentEvent e) {
+				repaint();
+			}
+		});
 	}
 
-	public MatchingVertex init( final int graphId, final int spotId )
-	{
-		pool.graphId.set( this, graphId );
-		pool.spotId.set( this, spotId );
-		return this;
+	/** Draw the example */
+	public void paint(Graphics g1) {
+		Graphics2D g = (Graphics2D) g1;
+		drawBackground(g);
+		AffineTransform affineTransform = new AffineTransform();
+		affineTransform.scale(0.5, 0.5);
+		g.setTransform(affineTransform);
+		graphRenderer.paint(g);
 	}
 
-	int graphId()
-	{
-		return pool.graphId.get( this );
+	private void drawBackground(Graphics2D g) {
+		g.setColor(Color.white)	;
+		g.fillRect(0,0,getWidth(), getHeight());
 	}
 
-	int spotId()
-	{
-		return pool.spotId.get( this );
+	public static void main(String[] a) {
+		JFrame f = new JFrame();
+		f.setDefaultCloseOperation(WindowConstants.DISPOSE_ON_CLOSE);
+		f.add(new CompactLineageRendererExample());
+		f.setSize(400,400);
+		f.setVisible(true);
 	}
 
-	public Spot getSpot()
-	{
-		return getSpot( spotRef() );
-	}
-
-	public Spot getSpot( final Spot ref )
-	{
-		return getModelGraph().getGraphIdBimap().getVertex( spotId(), ref );
-	}
-
-	private ModelGraph getModelGraph()
-	{
-		return pool.modelGraphs.get( graphId() );
-	}
-
-	private Spot spotRef()
-	{
-		return pool.modelGraphs.get( 0 ).vertexRef();
-	}
-
-	@Override
-	public String toString()
-	{
-		final StringBuffer sb = new StringBuffer( "{" );
-		sb.append( graphId() );
-		sb.append( ", " ).append( getSpot().getLabel() );
-		sb.append( '}' );
-		return sb.toString();
-	}
 }

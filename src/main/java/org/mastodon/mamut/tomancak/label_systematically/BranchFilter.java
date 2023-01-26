@@ -26,65 +26,51 @@
  * POSSIBILITY OF SUCH DAMAGE.
  * #L%
  */
-package org.mastodon.mamut.tomancak.merging;
+package org.mastodon.mamut.tomancak.label_systematically;
 
-import org.mastodon.graph.ref.AbstractVertex;
 import org.mastodon.mamut.model.ModelGraph;
 import org.mastodon.mamut.model.Spot;
-import org.mastodon.mamut.tomancak.merging.MatchingGraph.MatchingVertexPool;
-import org.mastodon.pool.ByteMappedElement;
 
-public class MatchingVertex extends AbstractVertex< MatchingVertex, MatchingEdge, MatchingVertexPool, ByteMappedElement >
+import java.util.function.Predicate;
+
+class BranchFilter implements Predicate<Spot>
 {
-	MatchingVertex( final MatchingVertexPool pool )
+
+	private final ModelGraph graph;
+
+	private boolean matchUnnamed = false;
+
+	private Predicate<String> labelFilter = null;
+
+	public BranchFilter( final ModelGraph graph )
 	{
-		super( pool );
+		this.graph = graph;
 	}
 
-	public MatchingVertex init( final int graphId, final int spotId )
+	public void setMatchUnnamed( boolean matchUnnamed )
 	{
-		pool.graphId.set( this, graphId );
-		pool.spotId.set( this, spotId );
-		return this;
+		this.matchUnnamed = matchUnnamed;
 	}
 
-	int graphId()
+	public void setLabelFilter( Predicate<String> namePattern )
 	{
-		return pool.graphId.get( this );
+		this.labelFilter = namePattern;
 	}
 
-	int spotId()
+	void setLabelEndsWith1or2Filter()
 	{
-		return pool.spotId.get( this );
-	}
-
-	public Spot getSpot()
-	{
-		return getSpot( spotRef() );
-	}
-
-	public Spot getSpot( final Spot ref )
-	{
-		return getModelGraph().getGraphIdBimap().getVertex( spotId(), ref );
-	}
-
-	private ModelGraph getModelGraph()
-	{
-		return pool.modelGraphs.get( graphId() );
-	}
-
-	private Spot spotRef()
-	{
-		return pool.modelGraphs.get( 0 ).vertexRef();
+		setLabelFilter( label -> label.endsWith( "1" ) || label.endsWith( "2" ) );
 	}
 
 	@Override
-	public String toString()
+	public boolean test( Spot branchStart )
 	{
-		final StringBuffer sb = new StringBuffer( "{" );
-		sb.append( graphId() );
-		sb.append( ", " ).append( getSpot().getLabel() );
-		sb.append( '}' );
-		return sb.toString();
+		if ( labelFilter != null )
+		{
+			String label = BranchUtils.getBranchLabel( graph, branchStart );
+			if ( label != null )
+				return labelFilter.test( label );
+		}
+		return matchUnnamed && !BranchUtils.isBranchLabelSet( graph, branchStart );
 	}
 }

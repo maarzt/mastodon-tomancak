@@ -2,7 +2,7 @@
  * #%L
  * mastodon-tomancak
  * %%
- * Copyright (C) 2018 - 2021 Tobias Pietzsch
+ * Copyright (C) 2018 - 2022 Tobias Pietzsch
  * %%
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions are met:
@@ -26,28 +26,18 @@
  * POSSIBILITY OF SUCH DAMAGE.
  * #L%
  */
-package org.mastodon.mamut.tomancak;
+package org.mastodon.mamut.tomancak.compact_lineage;
 
-import org.mastodon.graph.ref.OutgoingEdges;
 import org.mastodon.mamut.MamutAppModel;
-import org.mastodon.mamut.model.Link;
-import org.mastodon.mamut.model.ModelGraph;
-import org.mastodon.mamut.model.Spot;
 
-public class FlipDescendants
+import javax.swing.*;
+
+public class CompactLineageFrame extends JFrame
 {
-	public static void flipDescendants( final MamutAppModel appModel )
-	{
-		final ModelGraph graph = appModel.getModel().getGraph();
-		final Spot spot = appModel.getFocusModel().getFocusedVertex( graph.vertexRef() );
-		final OutgoingEdges< Link > outgoing = spot.outgoingEdges();
-		if ( outgoing.size() > 1 )
-		{
-			final Link first = outgoing.get( 0 );
-			final Spot target = first.getTarget();
-			graph.remove( first );
-			graph.addEdge( spot, target ).init();
-			graph.notifyGraphChanged();
-		}
+
+	public CompactLineageFrame(MamutAppModel appModel) {
+		super("Compact Lineage");
+		add(new CompactLineagePanel(appModel));
+		pack();
 	}
 }

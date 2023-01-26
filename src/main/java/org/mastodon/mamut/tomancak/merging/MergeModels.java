@@ -2,7 +2,7 @@
  * #%L
  * mastodon-tomancak
  * %%
- * Copyright (C) 2018 - 2021 Tobias Pietzsch
+ * Copyright (C) 2018 - 2022 Tobias Pietzsch
  * %%
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions are met:
@@ -36,7 +36,7 @@ import org.mastodon.mamut.model.Link;
 import org.mastodon.mamut.model.Model;
 import org.mastodon.mamut.model.ModelGraph;
 import org.mastodon.mamut.model.Spot;
-import org.mastodon.mamut.tomancak.InterpolateMissingSpots;
+import org.mastodon.mamut.tomancak.spots.InterpolateMissingSpots;
 import org.mastodon.mamut.tomancak.merging.MergeDatasets.OutputDataSet;
 import org.mastodon.mamut.tomancak.merging.MergeTags.TagSetStructureMaps;
 import org.mastodon.model.tag.ObjTags;
