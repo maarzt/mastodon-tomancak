@@ -14,6 +14,7 @@ import org.scijava.Context;
 
 public class LineageRegistrationDemo
 {
+	private static final String Ml_2020_07_23_MIRRORED = "/home/arzt/Datasets/DeepLineage/Johannes/2020-07-23_Ml_NL20-H2B_4-cells_Vlado_mirrored.mastodon";
 	private static final String Ml_2020_07_23 = "/home/arzt/Datasets/DeepLineage/Johannes/2020-07-23_Ml_NL20-H2B_4-cells_Vlado.mastodon";
 	private static final String Ml_2020_08_03 = "/home/arzt/Datasets/DeepLineage/Johannes/2020-08-03_Ml_DCV16bit_Subbg_2022-06-17_4-cells_Vlado.mastodon";
 	private static final String Ml_2022_01_27 = "/home/arzt/Datasets/DeepLineage/Johannes/2022-01-27_Ml_NL45xNL26_fused_part5_4-cells_Vlado.mastodon";
@@ -25,11 +26,15 @@ public class LineageRegistrationDemo
 	// 2020-08-03 vs. 2020-07-23 -- 12 mistakes
 	// 2022-01-27 vs. 2020-07-23 -- 5 mistakes
 	// 2022-05-03 vs. 2020-07-23 -- 12 mistakes
+	// 2020-08-03 vs. 2020-07-23 (mirrored) -- 9 mistakes (2020-08-03 significantly rotates between 4 and 8 cell stage in the video)
+	// 2022-01-27 vs. 2020-07-23 (mirrored) -- 0 mistakes (visually confirmed in blender very similar at early stages)
+	// 2022-05-03 vs. 2020-07-23 (mirrored) -- 0 mistakes (visually similar)
+
 	public static void main( String... args )
 	{
 		Context context = new Context();
-		openAppModel( context, Ml_2020_07_23 );
-		openAppModel( context, Ml_2022_05_03 );
+		openAppModel( context, Ml_2020_08_03 );
+		openAppModel( context, Ml_2020_07_23_MIRRORED );
 		context.service( LineageRegistrationControlService.class ).showDialog();
 	}
 
