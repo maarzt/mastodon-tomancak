@@ -23,18 +23,20 @@ public class LineageRegistrationDemo
 	// 2020-08-03 vs. 2022-05-03 -- 0 mistakes, until 16 cell stage
 	// 2020-08-03 vs. 2022-01-27 -- 1 mistake
 	// 2022-01-27 vs. 2022-05-03 -- 1 mistake
-	// 2020-08-03 vs. 2020-07-23 -- 12 mistakes
-	// 2022-01-27 vs. 2020-07-23 -- 5 mistakes
-	// 2022-05-03 vs. 2020-07-23 -- 12 mistakes
 	// 2020-08-03 vs. 2020-07-23 (mirrored) -- 9 mistakes (2020-08-03 significantly rotates between 4 and 8 cell stage in the video)
 	// 2022-01-27 vs. 2020-07-23 (mirrored) -- 0 mistakes (visually confirmed in blender very similar at early stages)
 	// 2022-05-03 vs. 2020-07-23 (mirrored) -- 0 mistakes (visually similar)
+
+	// mirroring problem:
+	// 2020-08-03 vs. 2020-07-23 -- 12 mistakes
+	// 2022-01-27 vs. 2020-07-23 -- 5 mistakes
+	// 2022-05-03 vs. 2020-07-23 -- 12 mistakes
 
 	public static void main( String... args )
 	{
 		Context context = new Context();
 		openAppModel( context, Ml_2020_08_03 );
-		openAppModel( context, Ml_2020_07_23_MIRRORED );
+		openAppModel( context, Ml_2022_01_27 );
 		context.service( LineageRegistrationControlService.class ).showDialog();
 	}
 
