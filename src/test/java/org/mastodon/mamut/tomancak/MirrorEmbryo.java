@@ -14,9 +14,9 @@ import mpicbg.spim.data.SpimDataException;
 
 public class MirrorEmbryo
 {
-	private static String input = "/home/arzt/Datasets/DeepLineage/Johannes-2023-03-06/2020-07-23_Ml_NL20-H2B-oGFP_TrackingData_from4-cells/2020-07-23_Ml_NL20-H2B-oGFP_subbg_2022-10-30_sorted_1a2-flipped.mastodon";
+	private static String input = "/home/arzt/Datasets/DeepLineage/Johannes/2020-08-03_Ml_DCV16bit_Subbg_2022-06-17_4-cells_Vlado.mastodon";
 
-	private static String output = "/home/arzt/Datasets/DeepLineage/Johannes-2023-03-06/2020-07-23_Ml_NL20-H2B-oGFP_TrackingData_from4-cells/2020-07-23_Ml_NL20-H2B-oGFP_subbg_2023-03-07_mirrored.mastodon";
+	private static String output = "/home/arzt/Datasets/DeepLineage/Johannes/2020-08-03_Ml_DCV16bit_Subbg_2022-06-17_4-cells_Vlado_mirrored.mastodon";
 
 	public static void main(String... args) throws IOException, SpimDataException
 	{
