@@ -6,6 +6,7 @@ import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReentrantReadWriteLock;
 
 import javax.swing.JOptionPane;
+import javax.swing.SwingUtilities;
 
 import net.imagej.ImageJService;
 
@@ -40,6 +41,16 @@ public class LineageRegistrationControlService extends AbstractService implement
 	public void registerMastodonInstance( WindowManager windowManager )
 	{
 		windowManagers.add( windowManager );
+		windowManager.getAppModel().closeListeners().add( () -> {
+			windowManagers.remove( windowManager );
+			updateListOfProjects();
+		} );
+		updateListOfProjects();
+	}
+
+	private void updateListOfProjects()
+	{
+		SwingUtilities.invokeLater( () -> dialog.setMastodonInstances( windowManagers ) );
 	}
 
 	public void showDialog()
@@ -49,7 +60,6 @@ public class LineageRegistrationControlService extends AbstractService implement
 			dialog.toFront();
 			return;
 		}
-		dialog.setMastodonInstances( windowManagers );
 		dialog.pack();
 		dialog.setVisible( true );
 	}
@@ -73,12 +83,6 @@ public class LineageRegistrationControlService extends AbstractService implement
 	{
 
 		private ModelCoupling coupling = null;
-
-		@Override
-		public void onUpdateClicked()
-		{
-			dialog.setMastodonInstances( windowManagers );
-		}
 
 		@Override
 		public void onSortTrackSchemeAClicked()

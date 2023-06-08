@@ -126,7 +126,6 @@ public class LineageRegistrationFrame extends JFrame
 		add( new JLabel( "project B:" ) );
 		comboBoxB.addActionListener( ignore -> updateEnableButtons() );
 		add( comboBoxB, "grow, wrap" );
-		add( newSimpleButton( "update list of projects", listener::onUpdateClicked ), "skip, wrap" );
 
 		add( new JLabel( "First time point for registration:" ), "gaptop unrelated" );
 		add( new JLabel( "project A: " ), "split 4" );
@@ -295,7 +294,8 @@ public class LineageRegistrationFrame extends JFrame
 			comboBoxB.addItem( mastodonInstance );
 		}
 		setSelected( comboBoxA, a, 0 );
-		setSelected( comboBoxB, b, 1 );
+		boolean sameProject = a != null && b != null && a.getWindowManager() == b.getWindowManager();
+		setSelected( comboBoxB, sameProject ? null : b, 1 );
 		updateEnableButtons();
 	}
 
@@ -367,8 +367,6 @@ public class LineageRegistrationFrame extends JFrame
 
 	public interface Listener
 	{
-
-		void onUpdateClicked();
 
 		void onSortTrackSchemeAClicked();
 

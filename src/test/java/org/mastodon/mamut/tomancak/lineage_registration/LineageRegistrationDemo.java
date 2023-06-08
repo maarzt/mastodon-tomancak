@@ -20,9 +20,11 @@ public class LineageRegistrationDemo
 	public static void main( String... args )
 	{
 		Context context = new Context();
+		context.service( LineageRegistrationControlService.class ).showDialog();
 		openAppModel( context, project1 );
 		openAppModel( context, project2 );
-		context.service( LineageRegistrationControlService.class ).showDialog();
+		openAppModel( context, project1 );
+		openAppModel( context, project2 );
 	}
 
 
