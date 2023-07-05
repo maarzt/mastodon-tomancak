@@ -14,6 +14,7 @@ import net.imglib2.util.LinAlgHelpers;
 import net.imglib2.util.Pair;
 import net.imglib2.util.ValuePair;
 
+import org.apache.commons.io.FilenameUtils;
 import org.jfree.chart.ChartFactory;
 import org.jfree.chart.ChartFrame;
 import org.jfree.chart.JFreeChart;
@@ -109,8 +110,9 @@ public class ImproveAnglesDemo
 					rg = LineageRegistrationAlgorithm.run( wms.get( i ).getAppModel().getModel(), 0, wms.get( j ).getAppModel().getModel(), 0, SpatialRegistrationMethod.DYNAMIC_ROOTS );
 					double localQuality = MeasureRegistrationQuality.measure( rg );
 					double localAngle = computeMean( getAngles( rg ) );
-					System.out.println( "quality: " + ( localQuality - globalQuality ) + " global: " + globalQuality + " local: " + localQuality + " " + projects.get( i ) + " " + projects.get( j ) );
-					System.out.println( "angle: " + ( localAngle - globalAngle ) + " global: " + globalAngle + " local: " + localAngle + " " + projects.get( i ) + " " + projects.get( j ) );
+					System.out.println( "datasets: " + FilenameUtils.getBaseName( projects.get( i ) ) + " " + FilenameUtils.getBaseName( projects.get( j ) ) );
+					System.out.printf( "quality difference: %8.2f    global: %8.2f    local: %8.2f\n", localQuality - globalQuality, globalQuality, localQuality );
+					System.out.printf( "angle difference:   %8.2f    global: %8.2f    local: %8.2f\n", localAngle - globalAngle, globalAngle, localAngle );
 				}
 		}
 	}
