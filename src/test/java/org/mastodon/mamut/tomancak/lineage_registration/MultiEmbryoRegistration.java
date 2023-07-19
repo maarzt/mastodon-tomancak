@@ -16,7 +16,6 @@ import org.mastodon.mamut.WindowManager;
 import org.mastodon.mamut.model.Link;
 import org.mastodon.mamut.model.Model;
 import org.mastodon.mamut.model.Spot;
-import org.mastodon.mamut.tomancak.lineage_registration.spatial_registration.SpatialRegistrationMethod;
 import org.mastodon.model.tag.ObjTagMap;
 import org.mastodon.model.tag.TagSetStructure;
 import org.scijava.Context;
@@ -54,7 +53,7 @@ public class MultiEmbryoRegistration
 	{
 		Map< Pair< Model, Model >, RefRefMap< Spot, Spot > > registrations = new HashMap<>();
 		for ( Pair< Model, Model > pair : makePairs( models ) )
-			registrations.put( pair, register( pair.getLeft(), pair.getRight() ) );
+			registrations.put( pair, TreeMatching.register( pair.getLeft(), pair.getRight() ) );
 
 		Model firstModel = models.get( 0 );
 		RefIntMap< Spot > agreement = new RefIntHashMap<>( firstModel.getGraph().vertices().getRefPool(), 0 );
@@ -88,11 +87,6 @@ public class MultiEmbryoRegistration
 				if ( correct )
 					agreement.put( key, agreement.get( key ) + 1 );
 			}
-	}
-
-	private static RefRefMap< Spot, Spot > register( Model firstModel, Model otherModel )
-	{
-		return LineageRegistrationAlgorithm.run( firstModel, 0, otherModel, 0, SpatialRegistrationMethod.DYNAMIC_ROOTS ).mapAB;
 	}
 
 	private static List< Pair< Model, Model > > makePairs( List< Model > otherModels )
