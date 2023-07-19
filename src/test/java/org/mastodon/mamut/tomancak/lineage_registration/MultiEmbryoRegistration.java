@@ -29,15 +29,15 @@ public class MultiEmbryoRegistration
 	public static void main( String... args )
 	{
 		List< String > projectPaths = Arrays.asList(
-//				LineageRegistrationDemo.project1,
-//				LineageRegistrationDemo.project2,
-//				LineageRegistrationDemo.project3
-				LineageRegistrationDemo.Ml_2020_07_23_MIRRORED,
-				LineageRegistrationDemo.Ml_2022_01_27,
-				LineageRegistrationDemo.Ml_2022_05_03,
-				//LineageRegistrationDemo.Ml_2020_08_03 // Cell are unusually positioned in 4 cell stage -> bad for registration.
-				LineageRegistrationDemo.Ml_2022_07_27
-				//LineageRegistrationDemo.Ml_2022_09_08 // Was treated specially for EM image acquisition and shows differences in development.
+				LineageRegistrationDemo.project1,
+				LineageRegistrationDemo.project2,
+				LineageRegistrationDemo.project3
+//				LineageRegistrationDemo.Ml_2022_05_03,
+//				LineageRegistrationDemo.Ml_2022_01_27,
+//				LineageRegistrationDemo.Ml_2020_07_23_MIRRORED,
+//				//LineageRegistrationDemo.Ml_2020_08_03 // Cell are unusually positioned in 4 cell stage -> bad for registration.
+//				LineageRegistrationDemo.Ml_2022_07_27
+//				//LineageRegistrationDemo.Ml_2022_09_08 // Was treated specially for EM image acquisition and shows differences in development.
 		);
 		try (final Context context = new Context())
 		{
@@ -46,6 +46,8 @@ public class MultiEmbryoRegistration
 			models.forEach( model -> ImproveAnglesDemo.removeBackEdges( model.getGraph() ) );
 			createTags( models.get( 0 ), computeAgreement( models ) );
 			windowManagers.get( 0 ).createBranchTrackScheme();
+			for ( int i = 1; i < windowManagers.size(); i++ )
+				windowManagers.get( i ).createBranchTrackScheme();
 		}
 	}
 

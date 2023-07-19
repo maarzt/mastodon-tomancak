@@ -22,8 +22,6 @@ import org.mastodon.mamut.treesimilarity.ZhangUnorderedTreeEditDistance;
 import org.mastodon.mamut.treesimilarity.tree.SimpleTree;
 import org.mastodon.mamut.treesimilarity.tree.Tree;
 
-import gnu.trove.map.TByteByteMap;
-
 public class TreeMatching
 {
 	static RefRefMap< Spot, Spot > register( Model firstModel, Model otherModel )
@@ -39,19 +37,24 @@ public class TreeMatching
 		Set< String > commonLabels = intersect( dividingBranchLabels( branchGraph1 ), dividingBranchLabels( branchGraph2 ) );
 		int startTime1 = startTime( branchGraph1, commonLabels );
 		int startTime2 = startTime( branchGraph2, commonLabels );
-		ObjectRefMap< Tree< Double >, Spot > treeToSpot1 = new ObjectRefHashMap<>( firstModel.getGraph().vertices().getRefPool() );
-		ObjectRefMap< Tree< Double >, Spot > treeToSpot2 = new ObjectRefHashMap<>( otherModel.getGraph().vertices().getRefPool() );
-		Map< String, Tree< Double > > trees1 = convertToSimpleTrees( branchGraph1, startTime1, cutoffTime1, commonLabels, treeToSpot1 );
-		Map< String, Tree< Double > > trees2 = convertToSimpleTrees( branchGraph2, startTime2, cutoffTime2, commonLabels, treeToSpot2 );
+		ObjectRefMap< Tree< Attribute >, Spot > treeToSpot1 = new ObjectRefHashMap<>( firstModel.getGraph().vertices().getRefPool() );
+		ObjectRefMap< Tree< Attribute >, Spot > treeToSpot2 = new ObjectRefHashMap<>( otherModel.getGraph().vertices().getRefPool() );
+		Map< String, Tree< Attribute > > trees1 = convertToSimpleTrees( branchGraph1, startTime1, cutoffTime1, commonLabels, treeToSpot1 );
+		Map< String, Tree< Attribute > > trees2 = convertToSimpleTrees( branchGraph2, startTime2, cutoffTime2, commonLabels, treeToSpot2 );
 		for ( String label : intersect( trees1.keySet(), trees2.keySet() ) )
 		{
-			Tree< Double > tree1 = trees1.get( label );
-			Tree< Double > tree2 = trees2.get( label );
-			Map< Tree< Double >, Tree< Double > > mapping = ZhangUnorderedTreeEditDistance.nodeMapping( tree1, tree2, ( a, b ) -> {
+			Tree< Attribute > tree1 = trees1.get( label );
+			Tree< Attribute > tree2 = trees2.get( label );
+			Map< Tree< Attribute >, Tree< Attribute > > mapping = ZhangUnorderedTreeEditDistance.nodeMapping( tree1, tree2, ( a, b ) -> {
 				if ( b == null )
-					return Math.abs( a );
+					return Math.abs( a.lifetime );// / ( 1 << ( a.generation - 1 ) ) );
 				else
-					return Math.abs( a - b );
+				{
+					if ( a.generation != b.generation )
+						return 1000.0;
+					else
+						return Math.abs( a.lifetime - b.lifetime );// / ( 1 << ( a.generation - 1 ) );
+				}
 			} );
 			mapping.forEach( ( t1, t2 ) -> {
 				Spot s1 = treeToSpot1.get( t1 );
@@ -62,27 +65,28 @@ public class TreeMatching
 		return result;
 	}
 
-	private static Map< String, Tree< Double > > convertToSimpleTrees( ModelBranchGraph branchGraph, int startTime, int endTime, Set< String > commonLabels,
-			ObjectRefMap< Tree< Double >, Spot > treeToSpot )
+	private static Map< String, Tree< Attribute > > convertToSimpleTrees( ModelBranchGraph branchGraph, int startTime, int endTime, Set< String > commonLabels,
+			ObjectRefMap< Tree< Attribute >, Spot > treeToSpot )
 	{
 
-		HashMap< String, Tree< Double > > stringTreeHashMap = new HashMap<>();
+		HashMap< String, Tree< Attribute > > stringTreeHashMap = new HashMap<>();
 		RefList< BranchSpot > roots = findRootNodes( branchGraph, startTime, commonLabels );
 		for ( BranchSpot root : roots )
-			stringTreeHashMap.put( root.getFirstLabel(), convertToSimpleTree( branchGraph, root, startTime, endTime, treeToSpot ) );
+			stringTreeHashMap.put( root.getFirstLabel(), convertToSimpleTree( branchGraph, root, startTime, endTime, treeToSpot, 1 ) );
 		return stringTreeHashMap;
 	}
 
-	private static SimpleTree< Double > convertToSimpleTree( ModelBranchGraph branchGraph, BranchSpot spot, int startTime, int endTime, ObjectRefMap< Tree< Double >, Spot > treeToSpot )
+	private static SimpleTree< Attribute > convertToSimpleTree( ModelBranchGraph branchGraph, BranchSpot spot, int startTime, int endTime, ObjectRefMap< Tree< Attribute >, Spot > treeToSpot,
+			int generation )
 	{
 		double value = ( Math.min( endTime, spot.getTimepoint() ) - Math.max( startTime, spot.getFirstTimePoint() ) + 1 ) / ( double ) ( endTime - startTime + 1 );
-		SimpleTree< Double > tree = new SimpleTree<>( value );
+		SimpleTree< Attribute > tree = new SimpleTree<>( new Attribute( value, generation ) );
 		Spot valueRef = treeToSpot.createValueRef();
 		treeToSpot.put( tree, branchGraph.getFirstLinkedVertex( spot, valueRef ) );
 		treeToSpot.releaseValueRef( valueRef );
 		BranchSpot ref = branchGraph.vertexRef();
 		for ( BranchLink link : spot.outgoingEdges() )
-			tree.addChild( convertToSimpleTree( branchGraph, link.getTarget( ref ), startTime, endTime, treeToSpot ) );
+			tree.addChild( convertToSimpleTree( branchGraph, link.getTarget( ref ), startTime, endTime, treeToSpot, generation + 1 ) );
 		branchGraph.releaseRef( ref );
 		return tree;
 	}
@@ -154,5 +158,18 @@ public class TreeMatching
 		for ( Spot spot : firstModel.getGraph().vertices() )
 			latestTimepoint = Math.max( latestTimepoint, spot.getTimepoint() );
 		return latestTimepoint + 1;
+	}
+
+	private static class Attribute
+	{
+		public final double lifetime;
+
+		public final int generation;
+
+		private Attribute( double lifetime, int generation )
+		{
+			this.lifetime = lifetime;
+			this.generation = generation;
+		}
 	}
 }
