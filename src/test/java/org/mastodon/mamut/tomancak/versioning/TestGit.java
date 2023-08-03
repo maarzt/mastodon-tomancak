@@ -24,7 +24,6 @@ import mpicbg.spim.data.SpimDataException;
 
 public class TestGit
 {
-
 	private static final String original = "/home/arzt/Datasets/Mette/E2.mastodon";
 
 	private static final String empty = "/home/arzt/Datasets/Mette/empty.mastodon";
@@ -87,11 +86,6 @@ public class TestGit
 			graph.releaseRef( ref1 );
 			graph.releaseRef( ref2 );
 		}
-	}
-
-	private static void clearGraph( ModelGraph graph )
-	{
-		graph.vertices().forEach( graph::remove );
 	}
 
 	private static void saveMastodonProject( Path path, WindowManager windowManager ) throws IOException
