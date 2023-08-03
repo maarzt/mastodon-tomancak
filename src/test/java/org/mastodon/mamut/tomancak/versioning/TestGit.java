@@ -6,14 +6,10 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.Comparator;
-import java.util.function.Consumer;
 import java.util.stream.Stream;
 
 import net.imglib2.util.StopWatch;
 
-import org.apache.commons.io.FileSystemUtils;
-import org.mastodon.collection.RefRefMap;
-import org.mastodon.collection.ref.RefRefHashMap;
 import org.mastodon.mamut.WindowManager;
 import org.mastodon.mamut.model.Link;
 import org.mastodon.mamut.model.Model;
@@ -31,6 +27,8 @@ public class TestGit
 
 	private static final String original = "/home/arzt/Datasets/Mette/E2.mastodon";
 
+	private static final String empty = "/home/arzt/Datasets/Mette/empty.mastodon";
+
 	public static void main( String... args ) throws SpimDataException, IOException
 	{
 		run();
@@ -42,55 +40,32 @@ public class TestGit
 		{
 			WindowManager originalProject = openMastodonProject( context, Paths.get( original ) );
 			removeWrongEdges( originalProject.getAppModel().getModel().getGraph() );
-			WindowManager project = openMastodonProject( context, Paths.get( original ) );
-			clearGraph( project.getAppModel().getModel().getGraph() );
-			copyGraph( originalProject.getAppModel().getModel().getGraph(), project.getAppModel().getModel().getGraph(), new Saver( project ) );
+			WindowManager newProject = openMastodonProject( context, Paths.get( empty ) );
+			ModelGraph newGraph = newProject.getAppModel().getModel().getGraph();
+			ModelGraph originalGraph = originalProject.getAppModel().getModel().getGraph();
+			exec( "git", "init" );
+			try (GraphCopier copier = new GraphCopier( originalGraph, newGraph ))
+			{
+				while ( copier.hasNextSpot() )
+				{
+					for ( int i = 0; i < 10_000 && copier.hasNextSpot(); i++ )
+						copier.copyNextSpot();
+					saveAndCommit( newProject );
+				}
+			}
 			System.out.println( "done" );
 		}
 	}
 
-	private static void copyGraph( ModelGraph graphA, ModelGraph graphB, Consumer< Spot > progress )
+	private static void saveAndCommit( WindowManager newProject ) throws IOException
 	{
-		Spot refA = graphA.vertexRef();
-		Spot refB = graphB.vertexRef();
-		Spot refB2 = graphB.vertexRef();
-		try
-		{
-			RefRefMap< Spot, Spot > map = new RefRefHashMap<>( graphA.vertices().getRefPool(), graphB.vertices().getRefPool() );
-			double[] position = new double[ 3 ];
-			double[][] cov = new double[ 3 ][ 3 ];
-			for ( Spot spotA : graphA.vertices() )
-			{
-				int timepoint = spotA.getTimepoint();
-				spotA.localize( position );
-				spotA.getCovariance( cov );
-				Spot spotB = graphB.addVertex( refB );
-				spotB.init( timepoint, position, cov );
-				spotB.setLabel( spotA.getLabel() );
-				map.put( spotA, spotB );
-				for ( Link sLink : spotA.incomingEdges() )
-				{
-					Spot sourceA = sLink.getSource( refA );
-					Spot sourceB = map.get( sourceA, refB2 );
-					if ( sourceB != null )
-						graphB.addEdge( sourceB, spotB ).init();
-				}
-				for ( Link sLink : spotA.outgoingEdges() )
-				{
-					Spot targetA = sLink.getTarget( refA );
-					Spot targetB = map.get( targetA, refB2 );
-					if ( targetB != null )
-						graphB.addEdge( spotB, targetB ).init();
-				}
-				progress.accept( spotB );
-			}
-		}
-		finally
-		{
-			graphA.releaseRef( refA );
-			graphB.releaseRef( refB );
-			graphB.releaseRef( refB2 );
-		}
+		StopWatch saveTime = StopWatch.createAndStart();
+		saveMastodonProject( Paths.get( "/home/arzt/tmp/test-git/text.mastodon" ), newProject );
+		System.out.println( "time to save: " + saveTime );
+		StopWatch gitTime = StopWatch.createAndStart();
+		exec( "git", "add", "text.mastodon" );
+		exec( "git", "commit", "-m", "text" + newProject.getAppModel().getModel().getGraph().vertices().size() );
+		System.out.println( "time to run git: " + gitTime );
 	}
 
 	private static void removeWrongEdges( ModelGraph graph )
@@ -146,43 +121,6 @@ public class TestGit
 		return windowManager;
 	}
 
-	private static class Saver implements Consumer< Spot >
-	{
-		private final WindowManager project;
-
-		int counter = 0;
-
-		public Saver( WindowManager project )
-		{
-			exec( "git", "init" );
-			this.project = project;
-		}
-
-		@Override
-		public void accept( Spot spot )
-		{
-			counter++;
-			if ( counter % 10_000 != 0 )
-				return;
-
-			System.out.println( counter );
-			try
-			{
-				StopWatch saveTime = StopWatch.createAndStart();
-				saveMastodonProject( Paths.get( "/home/arzt/tmp/test-git/text.mastodon" ), project );
-				System.out.println( "time to save: " + saveTime );
-				StopWatch gitTime = StopWatch.createAndStart();
-				exec( "git", "add", "text.mastodon" );
-				exec( "git", "commit", "-m", "text" + counter );
-				System.out.println( "time to run git: " + gitTime );
-			}
-			catch ( IOException e )
-			{
-				throw new RuntimeException( e );
-			}
-		}
-	}
-
 	private static void exec( String... command )
 	{
 		try
@@ -198,5 +136,4 @@ public class TestGit
 			throw new RuntimeException( e );
 		}
 	}
-
 }
