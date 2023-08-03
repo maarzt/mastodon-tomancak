@@ -5,6 +5,7 @@ import java.io.File;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.util.Iterator;
 import java.util.function.BiConsumer;
 
 import org.mastodon.collection.RefCollection;
@@ -69,27 +70,22 @@ public class GitFormatSerializer
 	private static < T > RefIntHashMap< T > writeChunked( Path path, String prefix, RefCollection< T > objects, BiConsumer< DataOutputStream, T > writeEntry ) throws IOException
 	{
 		RefIntHashMap< T > objectIdMap = new RefIntHashMap<>( RefCollectionUtils.getRefPool( objects ), -1, objects.size() );
-		DataOutputStream os = null;
-		try
+		Iterator< T > iterator = objects.iterator();
+		int i = 0;
+		while ( iterator.hasNext() )
 		{
-			int i = 0;
-			for ( T t : objects )
+			try (DataOutputStream os = new DataOutputStream( Files.newOutputStream( path.resolve( prefix + i + ".raw" ) ) ))
 			{
-				if ( i % 10_000 == 0 )
+				for ( int j = 0; j < 10_000; j++ )
 				{
-					if ( os != null )
-						os.close();
-					os = new DataOutputStream( Files.newOutputStream( path.resolve( prefix + i + ".raw" ) ) );
+					if ( !iterator.hasNext() )
+						break;
+					T t = iterator.next();
+					writeEntry.accept( os, t );
+					objectIdMap.put( t, j );
+					i++;
 				}
-				writeEntry.accept( os, t );
-				objectIdMap.put( t, i );
-				i++;
 			}
-		}
-		finally
-		{
-			if ( os != null )
-				os.close();
 		}
 		return objectIdMap;
 	}
