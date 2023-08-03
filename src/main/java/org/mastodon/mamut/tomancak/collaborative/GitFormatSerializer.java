@@ -32,15 +32,16 @@ public class GitFormatSerializer
 
 	private static RefIntMap< Spot > writeSpots( ModelGraph graph, Path path ) throws IOException
 	{
+		double[][] cov = new double[ 3 ][ 3 ];
 		return writeChunked( path, "spots_", graph.vertices(), ( os, spot ) -> {
 			try
 			{
 				os.writeInt( spot.getTimepoint() );
-				os.writeBytes( spot.getLabel() );
+				os.writeUTF( spot.getLabel() );
 				os.writeDouble( spot.getDoublePosition( 0 ) );
 				os.writeDouble( spot.getDoublePosition( 1 ) );
 				os.writeDouble( spot.getDoublePosition( 2 ) );
-				writeCovariance( os, spot );
+				writeCovariance( os, spot, cov );
 			}
 			catch ( IOException e )
 			{
@@ -74,7 +75,7 @@ public class GitFormatSerializer
 			int i = 0;
 			for ( T t : objects )
 			{
-				if ( i % 1000 == 0 )
+				if ( i % 10_000 == 0 )
 				{
 					if ( os != null )
 						os.close();
@@ -93,9 +94,8 @@ public class GitFormatSerializer
 		return objectIdMap;
 	}
 
-	private static void writeCovariance( DataOutputStream os, Spot spot ) throws IOException
+	private static void writeCovariance( DataOutputStream os, Spot spot, double[][] cov ) throws IOException
 	{
-		double[][] cov = new double[ 3 ][ 3 ];
 		spot.getCovariance( cov );
 		for ( int i = 0; i < 3; i++ )
 			for ( int j = 0; j < 3; j++ )
