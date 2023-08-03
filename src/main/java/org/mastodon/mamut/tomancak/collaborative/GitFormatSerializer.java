@@ -12,8 +12,10 @@ import org.mastodon.collection.RefCollection;
 import org.mastodon.collection.RefIntMap;
 import org.mastodon.collection.ref.RefIntHashMap;
 import org.mastodon.mamut.model.ModelGraph;
+import org.mastodon.mamut.model.ModelSerializer;
 import org.mastodon.mamut.model.Spot;
 import org.mastodon.mamut.tomancak.lineage_registration.RefCollectionUtils;
+import org.mastodon.pool.PoolObjectAttributeSerializer;
 
 public class GitFormatSerializer
 {
@@ -33,16 +35,13 @@ public class GitFormatSerializer
 
 	private static RefIntMap< Spot > writeSpots( ModelGraph graph, Path path ) throws IOException
 	{
-		double[][] cov = new double[ 3 ][ 3 ];
+		PoolObjectAttributeSerializer< Spot > vio = ModelSerializer.getInstance().getVertexSerializer();
+		byte[] bytes = new byte[ vio.getNumBytes() ];
 		return writeChunked( path, "spots_", graph.vertices(), ( os, spot ) -> {
 			try
 			{
-				os.writeInt( spot.getTimepoint() );
-				os.writeUTF( spot.getLabel() );
-				os.writeDouble( spot.getDoublePosition( 0 ) );
-				os.writeDouble( spot.getDoublePosition( 1 ) );
-				os.writeDouble( spot.getDoublePosition( 2 ) );
-				writeCovariance( os, spot, cov );
+				vio.getBytes( spot, bytes );
+				os.write( bytes );
 			}
 			catch ( IOException e )
 			{
@@ -90,11 +89,4 @@ public class GitFormatSerializer
 		return objectIdMap;
 	}
 
-	private static void writeCovariance( DataOutputStream os, Spot spot, double[][] cov ) throws IOException
-	{
-		spot.getCovariance( cov );
-		for ( int i = 0; i < 3; i++ )
-			for ( int j = 0; j < 3; j++ )
-				os.writeDouble( cov[ i ][ j ] );
-	}
 }
