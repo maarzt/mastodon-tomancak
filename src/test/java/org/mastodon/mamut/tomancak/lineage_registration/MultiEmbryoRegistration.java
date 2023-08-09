@@ -12,10 +12,12 @@ import org.apache.commons.lang3.tuple.Pair;
 import org.mastodon.collection.RefIntMap;
 import org.mastodon.collection.RefRefMap;
 import org.mastodon.collection.ref.RefIntHashMap;
+import org.mastodon.mamut.MainWindow;
 import org.mastodon.mamut.WindowManager;
 import org.mastodon.mamut.model.Link;
 import org.mastodon.mamut.model.Model;
 import org.mastodon.mamut.model.Spot;
+import org.mastodon.mamut.tomancak.lineage_registration.spatial_registration.SpatialRegistrationMethod;
 import org.mastodon.model.tag.ObjTagMap;
 import org.mastodon.model.tag.TagSetStructure;
 import org.scijava.Context;
@@ -29,9 +31,9 @@ public class MultiEmbryoRegistration
 	public static void main( String... args )
 	{
 		List< String > projectPaths = Arrays.asList(
+				LineageRegistrationDemo.project3,
 				LineageRegistrationDemo.project1,
-				LineageRegistrationDemo.project2,
-				LineageRegistrationDemo.project3
+				LineageRegistrationDemo.project2
 //				LineageRegistrationDemo.Ml_2022_05_03,
 //				LineageRegistrationDemo.Ml_2022_01_27,
 //				LineageRegistrationDemo.Ml_2020_07_23_MIRRORED,
@@ -45,6 +47,7 @@ public class MultiEmbryoRegistration
 			List< Model > models = windowManagers.stream().map( wm -> wm.getAppModel().getModel() ).collect( Collectors.toList() );
 			models.forEach( model -> ImproveAnglesDemo.removeBackEdges( model.getGraph() ) );
 			createTags( models.get( 0 ), computeAgreement( models ) );
+			new MainWindow( windowManagers.get( 0 ) ).setVisible( true );
 			windowManagers.get( 0 ).createBranchTrackScheme();
 			for ( int i = 1; i < windowManagers.size(); i++ )
 				windowManagers.get( i ).createBranchTrackScheme();
@@ -55,7 +58,7 @@ public class MultiEmbryoRegistration
 	{
 		Map< Pair< Model, Model >, RefRefMap< Spot, Spot > > registrations = new HashMap<>();
 		for ( Pair< Model, Model > pair : makePairs( models ) )
-			registrations.put( pair, TreeMatching.register( pair.getLeft(), pair.getRight() ) );
+			registrations.put( pair, register( pair.getLeft(), pair.getRight() ) );
 
 		Model firstModel = models.get( 0 );
 		RefIntMap< Spot > agreement = new RefIntHashMap<>( firstModel.getGraph().vertices().getRefPool(), 0 );
@@ -122,5 +125,11 @@ public class MultiEmbryoRegistration
 				edgeTags.set( link, tag );
 			}
 		}
+	}
+
+	private static RefRefMap< Spot, Spot > register( Model firstModel, Model otherModel )
+	{
+		//return TreeMatching.register( firstModel, otherModel );
+		return LineageRegistrationAlgorithm.run( firstModel, 0, otherModel, 0, SpatialRegistrationMethod.DYNAMIC_ROOTS ).mapAB;
 	}
 }
